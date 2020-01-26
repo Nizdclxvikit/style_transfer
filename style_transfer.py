@@ -1127,7 +1127,7 @@ def main():
 
     cli, cli_resp = None, None
 
-    url = 'http://127.0.0.1:%d/' % ARGS.port
+    url = 'http://127.0.0.1:%d/index.html' % ARGS.port
     progress_args = {}
     if ARGS.display == 'browser' and 'no_browser' not in ARGS:
         progress_args['url'] = url

@@ -1,0 +1,57 @@
+github crowsonkb style transfer.
+
+this uses caffe which is a massive pain to install on windows, so i use ubuntu 18.04 LTS. After installing the OS, download anaconda installer script from the anaconda site.
+I didnt use the power8/9 version just the plain .sh installer. Run it after downloading, don't change any settings. MAKE SURE TO NOT RUN IT AS ROOT. DO NOT USE SUDO. answer yes to conda init. 
+
+Recommend to use NVIDIA graphics card, supporting CUDA. I use Geforce GT 1030. Use apt to install the latest NVIDIA driver. Mine was 390. Go to https://docs.nvidia.com/deploy/cuda-compatibility/ and find the latest supported version of CUDA for your driver and download it from the NVIDIA website. I recommend downloading it from the website and NOT using apt to install it. run "nvcc --version". If it doesnt work you need to create a symlink between /usr/local/cuda/bin/nvcc and /usr/local/bin/nvcc.
+
+Go into anaconda-navigator and create a new environment (i called mine caffe). Python 3.6 works well. Add channels fastai, conda-forge, willyd, free. search for caffe-gpu and install it and all the dependencies. search for cudatoolkit and make it the same version as the one you downloaded before. then remove caffe-gpu and only caffe-gpu. you may need to use conda remove --force. 
+
+Clone caffe master into Documents and cd into caffe. copy makefile.config.example tp makefile.config and change it. Uncomment the python3 and anaconda ones. Leave pkg-config commented, make sure test_gpuid is 0. You may need to rename some of the python directories from 3.5 to 3.6. delete the unsupported architectures as specified in the makefile.config. Also probably opencv is version 3.
+
+do make all -j4, replace 4 with the numper of cpu cores you have. DONT USE SUDO FOR THIS. then make test -j4, make runtest, make pycaffe -j4, make distribute. This is where most of the problems arise. It will probably say something about the wrong protoc version. If it says that create some directories in Documents and use the below script removeproto.sh: (note the "caffe" directory will be replaced with the name of your environment)
+
+=====removeproto.sh=====
+
+mmv "/home/user/anaconda3/envs/caffe/lib/libprotoc*" "/home/user/Documents/prototemp/lib/libprotoc#1"
+mv /home/user/anaconda3/envs/caffe/bin/protoc /home/user/Documents/prototemp/bin/protoc
+
+mmv "/home/user/anaconda3/envs/caffe/lib/libprotobuf*" "/home/user/Documents/prototemp/lib/libprotobuf#1"
+mv /home/user/anaconda3/envs/caffe/include/google/protobuf /home/user/Documents/prototemp/include/google/protobuf
+mv /home/user/anaconda3/envs/caffe/lib/python3.6/site-packages/google/protobuf /home/user/Documents/prototemp/lib/python3.6/site-packages/google/protobuf
+
+=========================
+
+and when youre done with all the above commands use restoreproto.sh to restore it.
+
+=====restoreproto.sh=====
+
+mmv "/home/user/Documents/prototemp/lib/libprotoc*" "/home/user/anaconda3/envs/caffe/lib/libprotoc#1"
+mv /home/user/Documents/prototemp/bin/protoc /home/user/anaconda3/envs/caffe/bin/protoc
+
+mmv "/home/user/Documents/prototemp/lib/libprotobuf*" "/home/user/anaconda3/envs/caffe/lib/libprotobuf#1"
+mv /home/user/Documents/prototemp/include/google/protobuf /home/user/anaconda3/envs/caffe/include/google/protobuf
+mv /home/user/Documents/prototemp/lib/python3.6/site-packages/google/protobuf /home/user/anaconda3/envs/caffe/lib/python3.6/site-packages/google/protobuf
+
+==========================
+
+you will need to sudo apt install mmv. If it says something about no mkl.h file, then you need to install mkl-include in anaconda. If it says no Python.h then your makefile.config is wrong. If it says no ___.so.0.1.blah then its something to do with LD_LIBRARY_PATH. Try setting CUDA_VISIBLE_DEVICES to 0. If you get anything else just paste it into google
+
+create a directory caffe in /home/user/anaconda3/envs/caffe/lib/python3.6/site-packages/ this is where the compiled files will go. After "make distribute" i use distribute.sh below to move the files over into the anaconda environment.
+
+=====distribute.sh=====
+
+rm -rf /home/user/anaconda3/envs/caffe/lib/python3.6/site-packages/caffe/*
+rm -f /home/user/anaconda3/envs/caffe/lib/libcaffe*
+cp -r /home/user/Documents/caffe/distribute/python/caffe/* /home/user/anaconda3/envs/caffe/lib/python3.6/site-packages/caffe
+cp /home/user/Documents/caffe/distribute/lib/* /home/user/anaconda3/envs/caffe/lib
+
+=======================
+
+now if everything went well you can conda activate caffe (replace with name of your environment), python and import caffe. if it says no module name google or no module named protobuf then you forgot to run restoreproto.sh.
+
+
+Now clone the crowsonkb style transfer repo and cd into it. Try download the models and make sure style-transfer.sh is pointing to the right model. try running python style-transfer.sh and you will most likely get an import error. Dataclasses can be installed from fastai channel on anaconda. shared_ndarray and average just use pip. aiohttp use anaconda, and aiohttp_index just go into web_interface.py and comment out the import aiohttp_index line and wherever it says indexmiddleware delete that. (not the whole line). You can go into style-transfer.py and make it default to index.html. 
+
+Run the style_transfer.py on your chosen content and style images. If you get misaligned address, go to https://github.com/BVLC/caffe/pull/6548/files and make those changes in caffe/src, and remake everything. (make all -j4, make runtest -j4, make pycaffe -j4, make distribute). Anytime you change something in makefile.config and want to make again, its a good idea to run make clean first.
+

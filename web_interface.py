@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from aiohttp import web
-from aiohttp_index import IndexMiddleware
+#from aiohttp_index import IndexMiddleware
 import numpy as np
 from PIL import Image
 
@@ -103,7 +103,8 @@ class WebInterface:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        self.app = web.Application(middlewares=[IndexMiddleware()], loop=self.loop)
+        #self.app = web.Application(middlewares=[IndexMiddleware()], loop=self.loop)
+        self.app = web.Application(middlewares=None, loop=self.loop)
         self.app.event_queue = asyncio.Queue()
         self.app.image_encode_settings = {'format': 'png'}
         self.app.wss = []
